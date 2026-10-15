@@ -1,0 +1,26 @@
+{
+  "name": "bba-api",
+  "private": true,
+  "version": "1.0.0",
+  "description": "BBA public API (Vercel functions): inquiry intake. Isolated from the static sites so the Supabase service-role key lives in exactly one place.",
+  "scripts": {
+    "dev": "vercel dev",
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test tests/*.test.ts",
+    "verify:boundaries": "node scripts/verify-boundaries.mjs",
+    "verify:mail-dns": "node scripts/check-mail-dns.mjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.117.3",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.3",
+    "@vercel/node": "^5.0.0",
+    "tsx": "^4.23.15",
+    "typescript": "~6.0.2"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
