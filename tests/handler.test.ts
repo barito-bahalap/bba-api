@@ -426,7 +426,9 @@ describe("email templates", () => {
     conflict: false,
   };
   it("escapes every user-supplied value in HTML", () => {
-    const html = buildInternalEmail(n, env).html + buildAckEmail(n, env).html;
+    const html =
+      buildInternalEmail(n, { inboxes: env.mail!.inboxes }).html +
+      buildAckEmail(n, { inboxes: env.mail!.inboxes }).html;
     assert.ok(
       !html.includes("<script>") && !html.includes("<img"),
       "no raw markup",
@@ -505,5 +507,68 @@ describe("verifyTurnstile", () => {
       }),
       "unavailable",
     );
+  });
+});
+
+describe("lite mode (no captcha, no email)", () => {
+  const base = {
+    SUPABASE_URL: "https://x.supabase.co",
+    SUPABASE_SERVICE_ROLE_KEY: "k",
+    RATE_LIMIT_SALT: "0123456789abcdef",
+    ALLOWED_ORIGINS: '{"https://example.com":"corporate"}',
+  };
+  const lite = loadEnv(base);
+  const { turnstile_token: _drop, ...noToken } = body;
+
+  it("loads with only the four required variables", () => {
+    assert.equal(lite.turnstileSecret, undefined);
+    assert.equal(lite.mail, null);
+  });
+
+  it("refuses a half-configured email setup instead of silently dropping mail", () => {
+    assert.throws(
+      () => loadEnv({ ...base, RESEND_API_KEY: "r" }),
+      /half-configured, missing: MAIL_FROM/,
+    );
+  });
+
+  it("stores the inquiry, skips Turnstile and sends no mail", async () => {
+    overrides.env = lite;
+    overrides.mail = null;
+    const res = await post(noToken, { origin: "https://example.com" });
+    assert.equal(res.code, 201);
+    assert.equal(res.payload.ref, "INQ/2026/1015/001");
+    assert.equal(calls.submit.length, 1);
+    assert.equal(calls.submit[0].sourceSite, "corporate");
+    assert.deepEqual(
+      [calls.turnstile, calls.mail.length, calls.events.length],
+      [0, 0, 0],
+    );
+  });
+
+  it("still applies honeypot and rate limits", async () => {
+    overrides.env = lite;
+    overrides.mail = null;
+    assert.equal(
+      (
+        await post(
+          { ...noToken, company_website: "x" },
+          { origin: "https://example.com" },
+        )
+      ).payload.ref,
+      null,
+    );
+    overrides.rateLimit = async () => false;
+    assert.equal(
+      (await post(noToken, { origin: "https://example.com" })).code,
+      429,
+    );
+  });
+
+  it("with captcha ON, a missing token is rejected before any other work", async () => {
+    const res = await post(noToken);
+    assert.equal(res.code, 422);
+    assert.equal(res.payload.fields.turnstile_token, "captcha_required");
+    assert.deepEqual([calls.rate.length, calls.submit.length], [0, 0]);
   });
 });

@@ -2,8 +2,10 @@
   "compilerOptions": {
     "target": "ES2022",
     "lib": ["ES2023", "DOM"],
-    "module": "ESNext",
-    "moduleResolution": "Bundler",
+    "module": "CommonJS",
+    "moduleResolution": "Node10",
+    "ignoreDeprecations": "6.0",
+    "esModuleInterop": true,
     "types": ["node"],
     "strict": true,
     "noUncheckedIndexedAccess": true,

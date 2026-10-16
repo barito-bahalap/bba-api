@@ -17,6 +17,13 @@ export function createRealDeps(env: AppEnv): Deps {
     },
   });
   const intake = () => supabase.schema("intake");
+  console.log(
+    JSON.stringify({
+      evt: "features",
+      captcha: Boolean(env.turnstileSecret),
+      email: env.mail !== null,
+    }),
+  );
 
   return {
     env,
@@ -32,12 +39,14 @@ export function createRealDeps(env: AppEnv): Deps {
     },
 
     verifyTurnstile: ({ token, ip, expectedHostname }) =>
-      verifyTurnstile({
-        secret: env.turnstileSecret,
-        token,
-        ip,
-        expectedHostname,
-      }),
+      env.turnstileSecret
+        ? verifyTurnstile({
+            secret: env.turnstileSecret,
+            token,
+            ip,
+            expectedHostname,
+          })
+        : Promise.resolve("ok" as const),
 
     async submit({ input, sourceSite }) {
       const { data, error } = await intake().rpc("submit_inquiry", {
@@ -73,7 +82,7 @@ export function createRealDeps(env: AppEnv): Deps {
       };
     },
 
-    mail: createResendMailer(env.resendApiKey, env.mailFrom),
+    mail: env.mail ? createResendMailer(env.mail.apiKey, env.mail.from) : null,
 
     async logEvent(inquiryId, type, detail) {
       const { error } = await intake()

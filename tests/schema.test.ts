@@ -35,14 +35,7 @@ describe("parseInquiry", () => {
   it("reports one code per field, with required for missing values", () => {
     const r = parseInquiry({});
     assert.ok(!r.ok);
-    for (const f of [
-      "division",
-      "name",
-      "email",
-      "message",
-      "org_type",
-      "turnstile_token",
-    ]) {
+    for (const f of ["division", "name", "email", "message", "org_type"]) {
       assert.ok(f in r.fields, `${f} should be reported`);
     }
     assert.equal(r.fields.name, "required");
@@ -177,8 +170,8 @@ describe("loadEnv", () => {
     ));
   it("names missing variables without echoing values", () => {
     assert.throws(
-      () => loadEnv({ ...base, RESEND_API_KEY: "" }),
-      /Missing env: RESEND_API_KEY/,
+      () => loadEnv({ ...base, RATE_LIMIT_SALT: "" }),
+      /Missing env: RATE_LIMIT_SALT/,
     );
   });
   it("refuses a VITE_-prefixed secret", () => {

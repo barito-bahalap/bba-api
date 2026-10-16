@@ -139,7 +139,7 @@ export const inquirySchema = z.strictObject({
   // anti-bot
   company_website: z.string().max(200).optional(), // honeypot, handled before parsing
   t: z.number().int().min(0).max(86_400_000), // ms the form was open
-  turnstile_token: z.string().min(1, "captcha_required").max(2048, "invalid"),
+  turnstile_token: z.string().max(2048, "invalid").optional(), // required by the handler only when captcha is on
 });
 
 export type InquiryInput = z.infer<typeof inquirySchema>;
@@ -153,7 +153,6 @@ const REQUIRED_FIELDS = new Set([
   "message",
   "consent",
   "t",
-  "turnstile_token",
 ]);
 const KNOWN_CODE = /^[a-z_]+$/;
 

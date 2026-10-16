@@ -1,5 +1,5 @@
 import type { Division, Locale, OrgType } from "./schema";
-import type { AppEnv } from "./env";
+import type { Inboxes } from "./env";
 import type { MailMessage } from "./mail";
 
 export interface NotifyInput {
@@ -40,10 +40,7 @@ const TAG: Record<Division, string> = {
 };
 
 /** Which role inbox owns an inquiry. BBT mail never lands in media@ and vice versa. */
-export function inboxFor(
-  division: Division,
-  inboxes: AppEnv["inboxes"],
-): string {
+export function inboxFor(division: Division, inboxes: Inboxes): string {
   if (division === "bbt") return inboxes.tech;
   if (division === "bbm") return inboxes.media;
   return inboxes.inquiry;
@@ -51,7 +48,7 @@ export function inboxFor(
 
 export function recipientsFor(
   i: Pick<NotifyInput, "division" | "conflict">,
-  inboxes: AppEnv["inboxes"],
+  inboxes: Inboxes,
 ): string[] {
   const primary = inboxFor(i.division, inboxes);
   // Conflict-flagged inquiries always reach the founder inbox as well.
@@ -62,7 +59,7 @@ export function recipientsFor(
 
 export function buildInternalEmail(
   i: NotifyInput,
-  env: Pick<AppEnv, "inboxes" | "dashboardUrl">,
+  env: { inboxes: Inboxes; dashboardUrl?: string },
 ): MailMessage {
   const rows: Array<[string, string | undefined]> = [
     ["Reference", i.ref],
@@ -177,7 +174,7 @@ const COPY: Record<
 
 export function buildAckEmail(
   i: NotifyInput,
-  env: Pick<AppEnv, "inboxes">,
+  env: { inboxes: Inboxes },
 ): MailMessage {
   const c = COPY[i.locale];
   const brand = BRAND[i.division];

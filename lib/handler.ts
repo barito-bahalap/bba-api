@@ -48,7 +48,8 @@ export interface Deps {
     expectedHostname?: string;
   }): Promise<TurnstileVerdict>;
   submit(args: SubmitArgs): Promise<SubmitResult>;
-  mail: Mailer;
+  /** null = email off (lite mode). */
+  mail: Mailer | null;
   logEvent(
     inquiryId: string,
     type: string,
@@ -168,6 +169,16 @@ export function createHandler(deps: Deps) {
       });
     const input = parsed.data;
 
+    // Captcha is optional infrastructure: with no secret configured it is skipped entirely.
+    const captchaOn = Boolean(env.turnstileSecret);
+    if (captchaOn && !input.turnstile_token) {
+      return reply(422, {
+        ok: false,
+        error: "validation",
+        fields: { turnstile_token: "captcha_required" },
+      });
+    }
+
     // ---- abuse controls ------------------------------------------------------
     const ip = clientIp(req);
     try {
@@ -190,11 +201,13 @@ export function createHandler(deps: Deps) {
       return reply(503, { ok: false, error: "unavailable" });
     }
 
-    const verdict = await deps.verifyTurnstile({
-      token: input.turnstile_token,
-      ip,
-      expectedHostname: env.enforceHostname ? match.hostname : undefined,
-    });
+    const verdict = captchaOn
+      ? await deps.verifyTurnstile({
+          token: input.turnstile_token as string,
+          ip,
+          expectedHostname: env.enforceHostname ? match.hostname : undefined,
+        })
+      : "ok";
     if (verdict === "unavailable") {
       deps.log("error", "turnstile_unavailable");
       return reply(503, { ok: false, error: "unavailable" });
@@ -256,6 +269,14 @@ async function notify(
   input: InquiryInput,
   sourceSite: string,
 ): Promise<void> {
+  const mailer = deps.mail;
+  const mailConfig = deps.env.mail;
+  if (!mailer || !mailConfig) return; // email off: the stored row is the whole result
+
+  const mailEnv = {
+    inboxes: mailConfig.inboxes,
+    dashboardUrl: deps.env.dashboardUrl,
+  };
   const n: NotifyInput = {
     ref: saved.ref,
     division: input.division,
@@ -280,12 +301,8 @@ async function notify(
   const jobs: Array<
     [string, string, Promise<{ ok: boolean; status: number }>]
   > = [
-    [
-      "notified",
-      "notify_failed",
-      deps.mail.send(buildInternalEmail(n, deps.env)),
-    ],
-    ["ack_sent", "ack_failed", deps.mail.send(buildAckEmail(n, deps.env))],
+    ["notified", "notify_failed", mailer.send(buildInternalEmail(n, mailEnv))],
+    ["ack_sent", "ack_failed", mailer.send(buildAckEmail(n, mailEnv))],
   ];
 
   await Promise.all(
