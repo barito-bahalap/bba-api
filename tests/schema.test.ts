@@ -1,12 +1,12 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { parseInquiry } from "../lib/schema";
+import { parseInquiry } from "@/lib/schema";
 import {
   normalizeWhatsapp,
   sanitizeLine,
   sanitizeMultiline,
-} from "../lib/sanitize";
-import { loadEnv } from "../lib/env";
+} from "@/lib/sanitize";
+import { loadEnv } from "@/lib/env";
 
 const valid = {
   division: "bbt",

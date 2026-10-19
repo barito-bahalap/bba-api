@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { ConfigError, loadEnv } from "../lib/env";
-import { createHandler, type ReqLike, type ResLike } from "../lib/handler";
-import { createRealDeps } from "../lib/deps";
+import { ConfigError, loadEnv } from "@/lib/env";
+import { createHandler, type ReqLike, type ResLike } from "@/lib/handler";
+import { createRealDeps } from "@/lib/deps";
 
 let handler: ((req: ReqLike, res: ResLike) => Promise<void>) | undefined;
 

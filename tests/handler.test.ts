@@ -6,15 +6,11 @@ import {
   type Deps,
   type ReqLike,
   type ResLike,
-} from "../lib/handler";
-import { loadEnv } from "../lib/env";
-import type { MailMessage } from "../lib/mail";
-import {
-  buildAckEmail,
-  buildInternalEmail,
-  escapeHtml,
-} from "../lib/templates";
-import { verifyTurnstile } from "../lib/turnstile";
+} from "@/lib/handler";
+import { loadEnv } from "@/lib/env";
+import type { MailMessage } from "@/lib/mail";
+import { buildAckEmail, buildInternalEmail, escapeHtml } from "@/lib/templates";
+import { verifyTurnstile } from "@/lib/turnstile";
 
 const env = loadEnv({
   SUPABASE_URL: "https://x.supabase.co",
